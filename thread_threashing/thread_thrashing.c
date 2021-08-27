@@ -64,7 +64,7 @@ void *threadFunc(void * aThreadArg)
 	int    sResult             = 0;
 	int    i                   = 0;
 	//int	   sAllocMemIdx        = 0;
-	int	   sPageCnt		       = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS);
+	int	   sPageCnt			   = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS);
 	//char   sReadFirstPos       = 0;
 	//char   sReadLastPos		   = 0;
 	const threadArg sThreadArg = *((threadArg *)aThreadArg); 
@@ -76,9 +76,10 @@ void *threadFunc(void * aThreadArg)
 
 	DASSERT(MEMORY_SIZE % OS_PAGE_SIZE == 0);
 
-	sResult = posix_memalign((void**)&sAllocMem ,OS_PAGE_SIZE ,MEMORY_SIZE); //4K aligned memory alloc
-	DASSERT(sResult != RETURN_FAILURE && sAllocMem != NULL);				 // is allocation sucess?
-	DASSERT(((unsigned long)sAllocMem & OS_PAGE_SIZE_MASK) == 0);		     // is 4k adress aligned?
+	//4K aligned memory alloc
+	sResult = posix_memalign((void**)&sAllocMem ,OS_PAGE_SIZE ,MEMORY_SIZE); 
+	DASSERT(sResult != RETURN_FAILURE && sAllocMem != NULL);      // is allocation sucess?
+	DASSERT(((unsigned long)sAllocMem & OS_PAGE_SIZE_MASK) == 0); // is 4k adress aligned?
 
 	while(gIsOn == FALSE)
 	{
@@ -106,31 +107,6 @@ void *threadFunc(void * aThreadArg)
 		//sAllocMemIdx = gAccessPattern[i++];
 		gettimeofday(&sBegin, NULL);
 		clock_gettime(CLOCK_MONOTONIC, &begin);
-		/*while(sAllocMemIdx != -1)
-		{
-			sMemChunk = &sAllocMem[sAllocMemIdx]; //4k memory 
-			DASSERT((sMemChunk & OS_PAGE_SIZE_MASK) == 0); //check 4K memory alignment
-
-			if(ACCESS_PATTERN != ACCESS_NOACCESS)
-			{
-				if(IO_TYPE == IO_WRITE)
-				{
-					//memory write
-					sMemChunk->mPage[0]				   = 'a'; //write the first byte of page
-					sMemChunk->mPage[OS_PAGE_SIZE - 1] = 'a'; //write the last byte of page
-				}
-				else
-				{
-					//memory read
-					sReadFirstPos = sMemChunk->mPage[0];				//read the first byte of page
-					sReadFirstPos++;									//write stack memory
-					sReadLastPos  = sMemChunk->mPage[OS_PAGE_SIZE - 1]; //read the last byte of page
-					sReadLastPos++;										//write stack memory
-				}
-			}
-			sAllocMemIdx = gAccessPattern[i++]; // oops page fault??
-		}*/
-
 		for(i = 0; i < sPageCnt;i++)
 		{
 			sMemChunk = &sAllocMem[i]; //4k memory 
@@ -273,73 +249,6 @@ void generateAccessPattern(int *aAccessPatternArr, int aPageCnt, int aDistance)
 			j++;
 		}
 	}
-
-	/*switch(ACCESS_PATTERN)
-	{
-		int isExist = FALSE;
-		case RANDOM:
-			//worst case acces pattern
-			for(i = 0; i < aPageCnt; i++)
-			{
-				aAccessPatternArr[i] = sAccessIdx;
-				aAccessPatternArr[i] = sAccessIdx;
-			}
-
-
-			// genrate random accesIdx. not tested
-			srand((unsigned int)time(NULL));
-			
-			for(i = 0; i < aPageCnt; i++)
-			{
-				sAccessIdx = rand() % aPageCnt;
-
-				for(j = 0; j < aPageCnt; j++)
-				{
-					//found duplicate values
-					if(aAccessPatternArr[j] == sAccessIdx)
-					{
-						isExist = TRUE;
-						break;
-					}
-
-					// early exit
-					if(aAccessPatternArr[j] == -1)
-					{
-						isExist = FALSE;
-						break;
-					}
-				}
-
-				if(isExist == TRUE)
-				{
-					continue;
-				}
-				else
-				{
-					aAccessPatternArr[i] = sAccessIdx;
-				}
-			}
-			break;
-		case SEQUENTIAL:
-		case INTERVAL:
-			for(i = 0; i < aPageCnt; i++)
-			{
-				if((i % INTERVAL) == 0)
-				{
-					aAccessPatternArr[i] = i;
-				}
-				else
-				{
-					continue;
-				}
-			}
-			break;
-		case NOACCESS:
-			//nothing to do
-			break;
-		default:
-			break;
-	}*/
 }
 
 void checkThreadStatus(int aArrSize, 
@@ -370,8 +279,6 @@ int main(int argc, char **argv)
 	int				sOption			 = 0;
 	int				sResult			 = 0;
 	int				sPageCnt		 = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS); //get default sPageCnt
-	//int				sDistance        = 0;
-	//int			    sIOType			 = IO_READ;
 	size_t			sAvailablePhyMem = 0;
 	int				i				 = 0;
 	threadArg		sThreadArg;
@@ -396,7 +303,8 @@ int main(int argc, char **argv)
 					  DASSERT(THREAD_CNT != 0);
 				break;
 			case 'm': MEMORY_SIZE = calcMemorySize(optarg);
-					  MEMORY_SIZE = ROUND_UP(MEMORY_SIZE, OS_PAGE_SIZE); // round up. to set multiple of 4K
+                      // round up. to set multiple of 4K
+					  MEMORY_SIZE = ROUND_UP(MEMORY_SIZE, OS_PAGE_SIZE);
 				break;
 			case 's': THREAD_STACK_SIZE = calcMemorySize(optarg);
 					  DASSERT(THREAD_STACK_SIZE >= PTHREAD_STACK_MIN);
@@ -407,7 +315,8 @@ int main(int argc, char **argv)
 
 					  if((sPageCnt >> 1) <= ACCESS_DISTANCE)
 					  {
-						  ACCESS_DISTANCE = sPageCnt >> 1; //set maximum distance between pages. really?
+                          //set maximum distance between pages. really?
+						  ACCESS_DISTANCE = sPageCnt >> 1; 
 						  ACCESS_PATTERN  = ACCESS_RANDOM;
 					  }
 					  else if(ACCESS_DISTANCE <= 0)
@@ -428,7 +337,9 @@ int main(int argc, char **argv)
 
 					if(GLOBAL_MEMORY == TRUE)
 					{
-						sResult = posix_memalign((void**)&gGlobalMem ,OS_PAGE_SIZE ,(MEMORY_SIZE * THREAD_CNT));
+						sResult = posix_memalign((void**)&gGlobalMem,
+                                                    OS_PAGE_SIZE,
+                                                    (MEMORY_SIZE * THREAD_CNT));
 						DASSERT(sResult != RETURN_FAILURE && gGlobalMem != NULL);
 						DASSERT(((unsigned long)gGlobalMem & OS_PAGE_SIZE_MASK) == 0);
 					}
@@ -441,7 +352,6 @@ int main(int argc, char **argv)
 				break;
 		}
 	}
-
 
 	sAvailablePhyMem = sysconf(_SC_AVPHYS_PAGES);
 	printParameterAndSysconf(sAvailablePhyMem);
@@ -462,7 +372,8 @@ int main(int argc, char **argv)
 	{
 		sThreadArg.mThreadID = i;
 		sThreadArg.mPage = (GLOBAL_MEMORY == TRUE) ? &gGlobalMem[i] : NULL;
-		DASSERT((sThreadArg.mPage == NULL) || (((unsigned long)sThreadArg.mPage & OS_PAGE_SIZE_MASK) == 0));
+		DASSERT((sThreadArg.mPage == NULL) || 
+                (((unsigned long)sThreadArg.mPage & OS_PAGE_SIZE_MASK) == 0));
 
 		sResult = pthread_create(&sThreadArr[i], NULL, threadFunc, (void *)&sThreadArg);
 		DASSERT(sResult != RETURN_FAILURE);
@@ -498,7 +409,7 @@ int main(int argc, char **argv)
 			IO_TYPE = sIOType;
 		}
 
-	    generateAccessPattern(gAccessPattern, sPageCnt, ACCESS_DISTANCE);
+		generateAccessPattern(gAccessPattern, sPageCnt, ACCESS_DISTANCE);
 
 		gPause = FALSE;
 		//wait all thread are  resumed
@@ -538,7 +449,6 @@ int main(int argc, char **argv)
 		pthread_join(sThreadArr[i], (void **)&sResult);
 	}
 	printf("\n%d thread finished\n", i);
-
 
 	free(sThreadArr);
 	sThreadArr = NULL;

@@ -22,7 +22,20 @@
 #define MAX_THREAD_CNT        (MAX_THREAD_CNT_IN_BIT)
 
 #define GET_BIT_COUNT(a) (sizeof(a) * 8)
-#define ROUND_DOWN(a, b) (((a)  & (~b)))
-#define ROUND_UP(a, b)   ((((a) & ((b) - 1))) ? ROUND_DOWN((a)+(b), (b)) : (a));
+//#define ROUND_DOWN(a, b) (((a)  & (~b)))
+//#define ROUND_UP(a, b)   ((((a) & ((b) - 1))) ? ROUND_DOWN((a)+(b), (b)) : (a));
+#define ROUND_DOWN(a, b) (((a) & ~((b) - 1)))
+#define ROUND_UP(a, b)   (((a) + (b) - 1) & ~((b) - 1))
+#define GET_BIT_NTH(a, n) (1 & ((a) >> (n)))
+#define SET_BIT_NTH(a, n, t)\
+    do{\
+        if(t){\
+            return(((unsigned long int) 1 << n) | a);\
+        }\
+        else\
+        {\
+            return(~((unsigned long int) 1 << n) & a);\
+        }\
+    }while(0);\
 
 #endif  /* _THREAD_DEF_H  */

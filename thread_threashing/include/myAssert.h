@@ -10,12 +10,12 @@
 // the error occurred.        
 #ifndef ASSERT                
 #define ASSERT(x)                                               \
-	if (!(x)) {                                                 \
-		printf("Assertion failed in \"%s\", line %d\n" \
-				"\tProbable bug in software.\n",                \
-				__FILE__, __LINE__);                            \
-		assert(0);                                              \
-	}                                                           \
+    if (!(x)) {                                                 \
+        printf("Assertion failed in \"%s\", line %d\n" \
+                "\tProbable bug in software.\n",                \
+                __FILE__, __LINE__);                            \
+        assert(0);                                              \
+    }                                                           \
 else   // This 'else' exists to catch the user's following semicolon
 #endif
 

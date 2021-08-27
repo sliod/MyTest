@@ -4,33 +4,33 @@
 #include "thread_def.h"
 
 typedef struct page {
-	char mPage[OS_PAGE_SIZE];
+    char mPage[OS_PAGE_SIZE];
 } page;
 
 typedef struct threadArg {
-	unsigned int  mThreadID;
-	page        * mPage;
+    unsigned int  mThreadID;
+    page        * mPage;
 } threadArg;
 
 typedef enum IOType{
-	IO_READ  = 0,
-	IO_WRITE = 1,
-	IO_NONE  = 2,
+    IO_READ  = 0,
+    IO_WRITE = 1,
+    IO_NONE  = 2,
 } IOType;
 
 typedef enum accessPattern{
-	ACCESS_SEQUENTIAL = 0,
-	ACCESS_RANDOM     = 1,
-	ACCESS_INTERVAL   = 2,
-	ACCESS_NOACCESS   = 3,
+    ACCESS_SEQUENTIAL = 0,
+    ACCESS_RANDOM     = 1,
+    ACCESS_INTERVAL   = 2,
+    ACCESS_NOACCESS   = 3,
 } accessPattern;
 
 //64 threads cluster status
 //It dosen`t check individual thread status.
 //It checks 64 threads are all paused or resumed at once
 typedef enum threadStatus{
-	THREAD_STATUS_RESUME = 0,
-	THREAD_STATUS_PAUSE  = 0xFFFFFFFFFFFFFFFF, //ULONG_MAX
+    THREAD_STATUS_RESUME = 0,
+    THREAD_STATUS_PAUSE  = 0xFFFFFFFFFFFFFFFF, //ULONG_MAX
 } threadStatus;
 
 //global variable
@@ -54,18 +54,18 @@ int           GLOBAL_MEMORY     = FALSE;
 IOType        IO_TYPE           = IO_READ;
 
 const char ACCESS_PATTERN_STRING[ACCESS_NOACCESS+1][12] = {"SEQUENTIAL\0",
-														   "RANDOM\0",
-														   "INTERVAL\0",
-														   "NOACCESS\0"};
+                                                           "RANDOM\0",
+                                                           "INTERVAL\0",
+                                                           "NOACCESS\0"};
 
 void *threadFunc(void * aThreadArg);
 int calcMemorySize(char * aMemSize);
 void generateAccessPattern(int * aAccessPatternArr, 
-						   int   aPageCnt, 
-						   int   aDistance);
-void checkThreadStatus(int					    aArrSize,
-		               volatile unsigned long * aThreadStatusArr,
-												threadStatus aStatus);
+                           int   aPageCnt, 
+                           int   aDistance);
+void checkThreadStatus(int                      aArrSize,
+                       volatile unsigned long * aThreadStatusArr,
+                                                threadStatus aStatus);
 void printParameterAndSysconf();
 void printThreadRelatedInfo();
 
