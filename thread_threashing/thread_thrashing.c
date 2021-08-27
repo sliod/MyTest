@@ -21,14 +21,14 @@ extern char *optarg;
 void printThreadRelatedInfo(size_t aAvailablePhyMem)
 {
     printf("print statistics value\n"
-           "total allocated memory : %ld\n"
-           "total thread stacksize : %ld\n"
-           "_SC_AVPHYS_PAGES       : %ld\n"
-           "DELTA _SC_AVPHYS_PAGES : %ld\n\n",
-           (sizeof(pthread_t) * THREAD_CNT) + (THREAD_CNT * MEMORY_SIZE ),
-           THREAD_CNT * THREAD_STACK_SIZE,
-           sysconf(_SC_AVPHYS_PAGES),
-           aAvailablePhyMem - sysconf(_SC_AVPHYS_PAGES));
+            "total allocated memory : %ld\n"
+            "total thread stacksize : %ld\n"
+            "_SC_AVPHYS_PAGES       : %ld\n"
+            "DELTA _SC_AVPHYS_PAGES : %ld\n\n",
+            (sizeof(pthread_t) * THREAD_CNT) + (THREAD_CNT * MEMORY_SIZE ),
+            THREAD_CNT * THREAD_STACK_SIZE,
+            sysconf(_SC_AVPHYS_PAGES),
+            aAvailablePhyMem - sysconf(_SC_AVPHYS_PAGES));
 }
 void printParameterAndSysconf(size_t aAvailablePhyMem)
 {
@@ -61,15 +61,12 @@ void *threadFunc(void * aThreadArg)
 {
     page  *sAllocMem           = NULL;
     page  *sMemChunk           = NULL;
-    int    sResult             = 0;
-    int    i                   = 0;
-    //int      sAllocMemIdx        = 0;
     int    sPageCnt            = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS);
-    //char   sReadFirstPos       = 0;
-    //char   sReadLastPos          = 0;
     const threadArg sThreadArg = *((threadArg *)aThreadArg); 
     const int sArrIdx          = sThreadArg.mThreadID / 8;
     const int sArrIdxBitPos    = (1 << (sThreadArg.mThreadID % 8));
+    int    sResult;
+    int    i;
     struct timeval sBegin, sEnd;
     double diffTime1, diffTime2;
     struct timespec  begin, end;
@@ -103,7 +100,6 @@ void *threadFunc(void * aThreadArg)
         //clear thread status bit(resume)
         __sync_fetch_and_and( &gThreadStatusArr[sArrIdx], ~sArrIdxBitPos );
 
-        i = 0;
         //sAllocMemIdx = gAccessPattern[i++];
         gettimeofday(&sBegin, NULL);
         clock_gettime(CLOCK_MONOTONIC, &begin);
@@ -153,10 +149,9 @@ int calcMemorySize(char *aMemSize)
 
     //get unit character
     sUnit = aMemSize[sStrLength - 1];
-
-    //delete unit character
     aMemSize[sStrLength - 1] = '\0';
-    sMemSize                 = atoi(aMemSize);
+
+    sMemSize = atoi(aMemSize);
 
     switch(sUnit)
     {
@@ -200,8 +195,8 @@ int calcMemorySize(char *aMemSize)
  */
 void generateAccessPattern(int *aAccessPatternArr, int aPageCnt, int aDistance)
 {
-    int i          = 0;
-    int j          = 0;
+    int i = 0;
+    int j = 0;
 
     DASSERT(aPageCnt == (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS));
     DASSERT((0 < aDistance) && (aDistance < aPageCnt));
@@ -229,8 +224,8 @@ void generateAccessPattern(int *aAccessPatternArr, int aPageCnt, int aDistance)
             }
         }
         /*else if() // 100% access x pattern?
-        {
-        }*/
+          {
+          }*/
         else// sequential I/O
         {
             /* 
@@ -252,8 +247,8 @@ void generateAccessPattern(int *aAccessPatternArr, int aPageCnt, int aDistance)
 }
 
 void checkThreadStatus(int aArrSize, 
-                       volatile unsigned long *aThreadStatusArr, 
-                       threadStatus aStatus)
+        volatile unsigned long *aThreadStatusArr, 
+        threadStatus aStatus)
 {
     int i;
 
@@ -274,13 +269,13 @@ checkAgain:
 
 int main(int argc, char **argv)
 {
+    pthread_t      *sThreadArr  = NULL;
+    int             sOption     = 0;
+    int             sResult     = 0;
+    int             sPageCnt    = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS); //get default sPageCnt
+    int             i           = 0;
+    size_t          sAvailablePhyMem;
     pthread_attr_t  attr;
-    pthread_t      *sThreadArr       = NULL;
-    int             sOption          = 0;
-    int             sResult          = 0;
-    int             sPageCnt         = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS); //get default sPageCnt
-    size_t          sAvailablePhyMem = 0;
-    int             i                = 0;
     threadArg       sThreadArg;
     struct timeval sBegin, sEnd;
     double diffTime;
@@ -294,61 +289,67 @@ int main(int argc, char **argv)
     {
         switch(sOption)
         {
-            case 'c': THREAD_CNT = atoi(optarg);
-                      THREAD_CNT = MAX_THREAD_CNT < THREAD_CNT ? MAX_THREAD_CNT : THREAD_CNT;
+            case 'c': 
+                THREAD_CNT = atoi(optarg);
+                THREAD_CNT = MAX_THREAD_CNT < THREAD_CNT ? MAX_THREAD_CNT : THREAD_CNT;
 
-                      //round down to set multiple of 64
-                      THREAD_CNT = ROUND_DOWN(THREAD_CNT, GET_BIT_COUNT(gThreadStatusArr[0]));
-                      DASSERT(THREAD_CNT % GET_BIT_COUNT(gThreadStatusArr[0]) == 0);
-                      DASSERT(THREAD_CNT != 0);
+                //round down to set multiple of 64
+                THREAD_CNT = ROUND_DOWN(THREAD_CNT, GET_BIT_COUNT(gThreadStatusArr[0]));
+                DASSERT(THREAD_CNT % GET_BIT_COUNT(gThreadStatusArr[0]) == 0);
+                DASSERT(THREAD_CNT != 0);
                 break;
-            case 'm': MEMORY_SIZE = calcMemorySize(optarg);
-                      // round up. to set multiple of 4K
-                      MEMORY_SIZE = ROUND_UP(MEMORY_SIZE, OS_PAGE_SIZE);
+            case 'm': 
+                MEMORY_SIZE = calcMemorySize(optarg);
+                // round up. to set multiple of 4K
+                MEMORY_SIZE = ROUND_UP(MEMORY_SIZE, OS_PAGE_SIZE);
                 break;
-            case 's': THREAD_STACK_SIZE = calcMemorySize(optarg);
-                      DASSERT(THREAD_STACK_SIZE >= PTHREAD_STACK_MIN);
+            case 's': 
+                THREAD_STACK_SIZE = calcMemorySize(optarg);
+                DASSERT(THREAD_STACK_SIZE >= PTHREAD_STACK_MIN);
                 break;
-            case 'd': // distance to next access page
-                      ACCESS_DISTANCE = atoi(optarg);
-                      sPageCnt        = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS);
+            case 'd': 
+                // distance to next access page
+                ACCESS_DISTANCE = atoi(optarg);
+                sPageCnt        = (MEMORY_SIZE >> OS_PAGE_SIZE_BIT_POS);
 
-                      if((sPageCnt >> 1) <= ACCESS_DISTANCE)
-                      {
-                          //set maximum distance between pages. really?
-                          ACCESS_DISTANCE = sPageCnt >> 1; 
-                          ACCESS_PATTERN  = ACCESS_RANDOM;
-                      }
-                      else if(ACCESS_DISTANCE <= 0)
-                      {
-                          ACCESS_PATTERN = ACCESS_NOACCESS;
-                          ACCESS_DISTANCE = -1;
-                      }
-                      else
-                      {
-                          ACCESS_PATTERN = ACCESS_SEQUENTIAL;
-                      }
+                if((sPageCnt >> 1) <= ACCESS_DISTANCE)
+                {
+                    //set maximum distance between pages. really?
+                    ACCESS_DISTANCE = sPageCnt >> 1; 
+                    ACCESS_PATTERN  = ACCESS_RANDOM;
+                }
+                else if(ACCESS_DISTANCE <= 0)
+                {
+                    ACCESS_PATTERN = ACCESS_NOACCESS;
+                    ACCESS_DISTANCE = -1;
+                }
+                else
+                {
+                    ACCESS_PATTERN = ACCESS_SEQUENTIAL;
+                }
                 break;
-            case 'i': IO_TYPE = atoi(optarg);
-                      DASSERT((IO_TYPE == IO_READ) || (IO_TYPE == IO_WRITE));
+            case 'i': 
+                IO_TYPE = atoi(optarg);
+                DASSERT((IO_TYPE == IO_READ) || (IO_TYPE == IO_WRITE));
                 break;
-            case 'g': GLOBAL_MEMORY = atoi(optarg);
-                      DASSERT((GLOBAL_MEMORY == TRUE) || (GLOBAL_MEMORY == FALSE));
+            case 'g': 
+                GLOBAL_MEMORY = atoi(optarg);
+                DASSERT((GLOBAL_MEMORY == TRUE) || (GLOBAL_MEMORY == FALSE));
 
-                    if(GLOBAL_MEMORY == TRUE)
-                    {
-                        sResult = posix_memalign((void**)&gGlobalMem,
-                                                    OS_PAGE_SIZE,
-                                                    (MEMORY_SIZE * THREAD_CNT));
-                        DASSERT(sResult != RETURN_FAILURE && gGlobalMem != NULL);
-                        DASSERT(((unsigned long)gGlobalMem & OS_PAGE_SIZE_MASK) == 0);
-                    }
-                    else
-                    {
-                        gGlobalMem = NULL;
-                    }
+                if(GLOBAL_MEMORY == TRUE)
+                {
+                    sResult = posix_memalign((void**)&gGlobalMem,
+                            OS_PAGE_SIZE,
+                            (MEMORY_SIZE * THREAD_CNT));
+                    DASSERT(sResult != RETURN_FAILURE && gGlobalMem != NULL);
+                    DASSERT(((unsigned long)gGlobalMem & OS_PAGE_SIZE_MASK) == 0);
+                }
+                else
+                {
+                    gGlobalMem = NULL;
+                }
                 break;
-            default: ;
+            default:
                 break;
         }
     }
@@ -383,46 +384,45 @@ int main(int argc, char **argv)
     printThreadRelatedInfo(sAvailablePhyMem);
 
     /*printf("press enter to activate thread\n");
-    (void)getchar();
-    gIsOn = TRUE;*/
+      (void)getchar();
+      gIsOn = TRUE;*/
 
     sleep(10);
     printf("thread start\n");
     gIsOn = TRUE;
 
     /*while(TRUE)
+      {
+      printf("momry access distance: \n");
+      scanf("%*d%d %*d%d", &sDistance, (int*)&sIOType);
+      gPause = TRUE;
+
+    //wait all threads paused
+    checkThreadStatus(THREAD_CNT / sizeof(unsigned long), 
+    gThreadStatusArr,
+    THREAD_STATUS_PAUSE);
+    //This point, all threads are paused. change the parameters.
+
+    //now we can modify global values
+    //skip worng input
+    if((IO_TYPE == IO_READ) || (IO_TYPE == IO_WRITE))
     {
-        printf("momry access distance: \n");
-        scanf("%*d%d %*d%d", &sDistance, (int*)&sIOType);
-        gPause = TRUE;
+    IO_TYPE = sIOType;
+    }
 
-        //wait all threads paused
-        checkThreadStatus(THREAD_CNT / sizeof(unsigned long), 
-                gThreadStatusArr,
-                THREAD_STATUS_PAUSE);
-        //This point, all threads are paused. change the parameters.
-        
-        //now we can modify global values
-        //skip worng input
-        if((IO_TYPE == IO_READ) || (IO_TYPE == IO_WRITE))
-        {
-            IO_TYPE = sIOType;
-        }
+    generateAccessPattern(gAccessPattern, sPageCnt, ACCESS_DISTANCE);
 
-        generateAccessPattern(gAccessPattern, sPageCnt, ACCESS_DISTANCE);
-
-        gPause = FALSE;
-        //wait all thread are  resumed
-        checkThreadStatus(THREAD_CNT / sizeof(unsigned long), 
-                gThreadStatusArr,
-                THREAD_STATUS_RESUME);
-        //This point, all threads are resumed. change the parameters.
+    gPause = FALSE;
+    //wait all thread are  resumed
+    checkThreadStatus(THREAD_CNT / sizeof(unsigned long), 
+    gThreadStatusArr,
+    THREAD_STATUS_RESUME);
+    //This point, all threads are resumed. change the parameters.
     }*/
 
     /*printf("press enter to terminate thread\n");
-    (void)getchar();
-    gIsOn = FALSE;*/
-
+      (void)getchar();
+      gIsOn = FALSE;*/
 
     sleep(30);
     printf("thread stop\n");
@@ -434,10 +434,10 @@ int main(int argc, char **argv)
     diffTime = (sEnd.tv_sec-sBegin.tv_sec)+((sEnd.tv_usec-sBegin.tv_usec) / 1000000.0);
 
     printf("Total elapsed time         : %f sec\n"
-           "Max elapsed time1 per loop : %f sec\n"
-           "Max elapsed time2 per loop : %f sec\n"
-           "Total loop count           : %d\n"
-           "Average loop count         : %f\n", 
+            "Max elapsed time1 per loop : %f sec\n"
+            "Max elapsed time2 per loop : %f sec\n"
+            "Total loop count           : %d\n"
+            "Average loop count         : %f\n", 
             diffTime,
             gMaxTime1,
             gMaxTime2,
