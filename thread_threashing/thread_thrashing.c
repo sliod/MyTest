@@ -108,6 +108,11 @@ void *threadFunc(void * aThreadArg)
             sMemChunk = &sAllocMem[i]; //4k memory 
             DASSERT(((long)sMemChunk & OS_PAGE_SIZE_MASK) == 0); //check 4K memory alignment
 
+            if(unlikely(PAGE_ACCESS_INTERVAL != 0))
+            {
+                sleep(PAGE_ACCESS_INTERVAL);
+            }
+
             if(ACCESS_PATTERN != ACCESS_NOACCESS)
             {
                 //memory write
@@ -285,7 +290,7 @@ int main(int argc, char **argv)
     DASSERT(OS_PAGE_SIZE   == sysconf(_SC_PAGESIZE));
     DASSERT(sizeof(threadStatus) == sizeof(unsigned long));
 
-    while((sOption = getopt(argc, argv, "c:m:s:d:i:g:")) != EOF)
+    while((sOption = getopt(argc, argv, "c:m:s:d:g:hi")) != EOF)
     {
         switch(sOption)
         {
@@ -329,10 +334,9 @@ int main(int argc, char **argv)
                 }
                 break;
             case 'i': 
-                IO_TYPE = atoi(optarg);
-                DASSERT((IO_TYPE == IO_READ) || (IO_TYPE == IO_WRITE));
+                PAGE_ACCESS_INTERVAL = 1;
                 break;
-            case 'g': 
+            case 'g':
                 GLOBAL_MEMORY = atoi(optarg);
                 DASSERT((GLOBAL_MEMORY == TRUE) || (GLOBAL_MEMORY == FALSE));
 
@@ -349,10 +353,30 @@ int main(int argc, char **argv)
                     gGlobalMem = NULL;
                 }
                 break;
+            case 'h': 
+                printf("usage : ./thread_thrashing -c 1024 -m 10M -s 10M -d 1\n"
+                       "-c : Thread count\n"
+                       "-m : Memory size per thread[K,M,G]\n"
+                       "-s : Stack size per thread[K,M,G]\n"
+                       "-d : Dereference Memory distance\n");
+                goto exit;
+                break;
             default:
+                printf("usage : ./thread_thrashing -c 1024 -m 10M -s 10M -d 1");
+                goto exit;
                 break;
         }
     }
+
+    printf("running option ./thread_thrashing"
+            " -c %d"
+            " -m %zu"
+            " -s %zu"
+            " -d %d\n",
+            THREAD_CNT,
+            MEMORY_SIZE,
+            THREAD_STACK_SIZE, 
+            ACCESS_DISTANCE);
 
     sAvailablePhyMem = sysconf(_SC_AVPHYS_PAGES);
     printParameterAndSysconf(sAvailablePhyMem);
@@ -433,7 +457,13 @@ int main(int argc, char **argv)
     gettimeofday(&sEnd, NULL);
     diffTime = (sEnd.tv_sec-sBegin.tv_sec)+((sEnd.tv_usec-sBegin.tv_usec) / 1000000.0);
 
-    printf("Total elapsed time         : %f sec\n"
+    for( i = 0; i < THREAD_CNT; i++)
+    {
+        pthread_join(sThreadArr[i], (void **)&sResult);
+    }
+    printf("\n%d thread finished\n", i);
+
+    printf("Total elapsed time          : %f sec\n"
             "Max elapsed time1 per loop : %f sec\n"
             "Max elapsed time2 per loop : %f sec\n"
             "Total loop count           : %d\n"
@@ -444,14 +474,9 @@ int main(int argc, char **argv)
             gLoopCnt,
             gLoopCnt/(float)THREAD_CNT);  
 
-    for( i = 0; i < THREAD_CNT; i++)
-    {
-        pthread_join(sThreadArr[i], (void **)&sResult);
-    }
-    printf("\n%d thread finished\n", i);
-
     free(sThreadArr);
     sThreadArr = NULL;
 
+exit:
     return RETURN_SUCCESS;
 }

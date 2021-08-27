@@ -28,4 +28,7 @@ else   // This 'else' exists to catch the user's following semicolon
 # define DASSERT(x) UNUSED(x)  /* DASSERT does nothing when not debugging */
 #endif 
 
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
+
 #endif  /* _MYASSERT_H  */

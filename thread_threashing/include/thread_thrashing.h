@@ -44,14 +44,15 @@ page                 * gGlobalMem = NULL;
 int                    gLoopCnt   = 0;
 
 //arguments 
-int           THREAD_CNT        = GET_BIT_COUNT(gThreadStatusArr[0]); 
-size_t        MEMORY_SIZE       = MEGA;
-size_t        THREAD_STACK_SIZE = 8 * MEGA;
-int           ACCESS_RATE       = 0;
-accessPattern ACCESS_PATTERN    = 0;
-int           ACCESS_DISTANCE   = 1;
-int           GLOBAL_MEMORY     = FALSE;
-IOType        IO_TYPE           = IO_READ;
+int           THREAD_CNT            = GET_BIT_COUNT(gThreadStatusArr[0]); 
+size_t        MEMORY_SIZE           = MEGA;
+size_t        THREAD_STACK_SIZE     = 8 * MEGA;
+int           ACCESS_RATE           = 0;
+accessPattern ACCESS_PATTERN        = 0;
+int           ACCESS_DISTANCE       = 1;
+int           PAGE_ACCESS_INTERVAL  = 0;
+int           GLOBAL_MEMORY         = FALSE;
+IOType        IO_TYPE               = IO_READ;
 
 const char ACCESS_PATTERN_STRING[ACCESS_NOACCESS+1][12] = {"SEQUENTIAL\0",
                                                            "RANDOM\0",
